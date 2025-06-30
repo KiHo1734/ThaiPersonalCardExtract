@@ -33,8 +33,7 @@ roi_extract:
     type: text
     name: NameEN
     lang: eng
-    tesseract_config: "--dpi 300 --psm 13 --oem 1 -c tessedit_char_whitelist='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.
-      '"
+    tesseract_config: "--dpi 300 --psm 13 --oem 1 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz."
     blocklist: ''
     allowlist: ''
     provider: tesseract
