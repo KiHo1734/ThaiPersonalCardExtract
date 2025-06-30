@@ -93,7 +93,7 @@ class PersonalCard:
         self.sift = cv2.SIFT_create(sift_rate)
 
         if str(provider) == str(Provider.EASYOCR) or str(provider) == str(Provider.DEFAULT):
-            self.reader = easyocr.Reader('en', 'th', gpu=True)
+            self.reader = easyocr.Reader(['en', 'th'], gpu=True)
         self.__loadSIFT()
         self.h, self.w, *other = self.source_image_front_tempalte.shape
 
@@ -196,26 +196,35 @@ class PersonalCard:
             if self.save_extract_result:
                 Image.fromarray(imgCrop).save(os.path.join(self.path_to_save, f'{box["name"]}.jpg'), compress_level=3)
 
-        if str(self.lang) == str(Language.MIX) and str(side) == str(Card.FRONT_TEMPLATE):
-            extract_th = self.cardInfo[str(self.lang)]["FullNameTH"].split(' ')
-            self.cardInfo[str(self.lang)]["PrefixTH"] = str("".join(extract_th[0]))
-            self.cardInfo[str(self.lang)]["NameTH"] = str(
-                "".join(extract_th[1] if len(extract_th) > 2 else extract_th[-1]))
-            self.cardInfo[str(self.lang)]["LastNameTH"] = str("".join(extract_th[-1]))
+        def clean_and_split_fullname(fullname: str):
+            # ลบช่องว่างซ้ำ, \t, \n และสัญลักษณ์พิเศษบางตัว
+            cleaned = re.sub(r'[^\w\s\.]', '', fullname).strip()
+            parts = re.split(r'\s+', cleaned)
+            return parts
 
-            extract_en = self.cardInfo[str(self.lang)]["NameEN"].split(' ')
-            self.cardInfo[str(self.lang)]["PrefixEN"] = str("".join(extract_en[0]))
-            self.cardInfo[str(self.lang)]["NameEN"] = str("".join(extract_en[1:]))
+        if str(self.lang) == str(Language.MIX) and str(side) == str(Card.FRONT_TEMPLATE):
+            # ภาษาไทย
+            extract_th = clean_and_split_fullname(self.cardInfo[str(self.lang)]["FullNameTH"])
+            self.cardInfo[str(self.lang)]["PrefixTH"] = extract_th[0] if len(extract_th) > 0 else ""
+            self.cardInfo[str(self.lang)]["NameTH"] = extract_th[1] if len(extract_th) > 2 else extract_th[-1] if len(extract_th) > 1 else ""
+            self.cardInfo[str(self.lang)]["LastNameTH"] = extract_th[-1] if len(extract_th) > 1 else ""
+
+            # ภาษาอังกฤษ
+            extract_en = clean_and_split_fullname(self.cardInfo[str(self.lang)]["NameEN"])
+            self.cardInfo[str(self.lang)]["PrefixEN"] = extract_en[0] if len(extract_en) > 0 else ""
+            self.cardInfo[str(self.lang)]["NameEN"] = " ".join(extract_en[1:]) if len(extract_en) > 1 else ""
+
         elif str(self.lang) == str(Language.THAI) and str(side) == str(Card.FRONT_TEMPLATE):
-            extract_th = self.cardInfo[str(self.lang)]["FullNameTH"].split(' ')
-            self.cardInfo[str(self.lang)]["PrefixTH"] = str("".join(extract_th[0]))
-            self.cardInfo[str(self.lang)]["NameTH"] = str(
-                "".join(extract_th[1] if len(extract_th) > 2 else extract_th[-1]))
-            self.cardInfo[str(self.lang)]["LastNameTH"] = str("".join(extract_th[-1]))
+            extract_th = clean_and_split_fullname(self.cardInfo[str(self.lang)]["FullNameTH"])
+            self.cardInfo[str(self.lang)]["PrefixTH"] = extract_th[0] if len(extract_th) > 0 else ""
+            self.cardInfo[str(self.lang)]["NameTH"] = extract_th[1] if len(extract_th) > 2 else extract_th[-1] if len(extract_th) > 1 else ""
+            self.cardInfo[str(self.lang)]["LastNameTH"] = extract_th[-1] if len(extract_th) > 1 else ""
+
         elif str(self.lang) == str(Language.ENGLISH) and str(side) == str(Card.FRONT_TEMPLATE):
-            extract_en = self.cardInfo[str(self.lang)]["NameEN"].split(' ')
-            self.cardInfo[str(self.lang)]["PrefixEN"] = str(extract_en[0])
-            self.cardInfo[str(self.lang)]["NameEN"] = str(extract_en[1:])
+            extract_en = clean_and_split_fullname(self.cardInfo[str(self.lang)]["NameEN"])
+            self.cardInfo[str(self.lang)]["PrefixEN"] = extract_en[0] if len(extract_en) > 0 else ""
+            self.cardInfo[str(self.lang)]["NameEN"] = " ".join(extract_en[1:]) if len(extract_en) > 1 else ""
+
 
         if str(side) == str(Card.BACK_TEMPLATE):
             self.cardInfo[str(self.lang)]["LaserCode"] = "".join(re.findall("([a-zA-Z0-9])",self.cardInfo[str(self.lang)]["LaserCode"])).upper()
