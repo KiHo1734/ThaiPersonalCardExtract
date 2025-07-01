@@ -241,41 +241,43 @@ class PersonalCard:
             address = re.sub(r"\s+", " ", address)  # normalize ช่องว่าง
 
             result = {
-                "house_number": "",
-                "village_or_road": "",
-                "district": "",
-                "amphoe": "",
-                "province": "",
-                "postcode": ""
+                "HouseNumber": "",
+                "Village_or_Road": "",
+                "District": "",
+                "Amphoe": "",
+                "Province": "",
+                "Postcode": ""
             }
 
-            # 1. แยกเลขบ้าน (ตัวอย่าง 99/1 หรือ 123)
+            # 1. แยกเลขบ้าน เช่น 99/1 หรือ 123
             match = re.search(r"(\d+/\d+|\d+)", address)
             if match:
-                result["house_number"] = match.group(0)
+                result["HouseNumber"] = match.group(0)
                 address = address[match.end():].strip()
 
-            # 2. แยกแขวง/ถนน/หมู่บ้าน (คำถัดไป)
+            # 2. แยกคำถัดไปเป็นถนน/หมู่บ้าน
             tokens = address.split()
-
             if tokens:
-                result["village_or_road"] = tokens[0]
+                result["Village_or_Road"] = tokens[0]
+
+            # 3. หาเขต / อำเภอ / จังหวัด
             if "เขต" in tokens:
                 idx = tokens.index("เขต")
-                result["district"] = tokens[idx + 1] if idx + 1 < len(tokens) else ""
+                result["District"] = tokens[idx + 1] if idx + 1 < len(tokens) else ""
             if "อำเภอ" in tokens:
                 idx = tokens.index("อำเภอ")
-                result["amphoe"] = tokens[idx + 1] if idx + 1 < len(tokens) else ""
+                result["Amphoe"] = tokens[idx + 1] if idx + 1 < len(tokens) else ""
             if "จังหวัด" in tokens:
                 idx = tokens.index("จังหวัด")
-                result["province"] = tokens[idx + 1] if idx + 1 < len(tokens) else ""
+                result["Province"] = tokens[idx + 1] if idx + 1 < len(tokens) else ""
 
-            # 3. แยกรหัสไปรษณีย์ (5 ตัวเลขสุดท้าย)
+            # 4. หาเลขไปรษณีย์
             match = re.search(r"\d{5}$", address)
             if match:
-                result["postcode"] = match.group(0)
+                result["Postcode"] = match.group(0)
 
             return result
+
 
         if str(self.lang) == str(Language.MIX) and str(side) == str(Card.FRONT_TEMPLATE):
             prefix_th, name_th, lastname_th = split_thai_fullname(self.cardInfo[str(self.lang)]["FullNameTH"])
@@ -303,7 +305,7 @@ class PersonalCard:
         if str(side) == str(Card.BACK_TEMPLATE):
             self.cardInfo[str(self.lang)]["LaserCode"] = "".join(re.findall("([a-zA-Z0-9])",self.cardInfo[str(self.lang)]["LaserCode"])).upper()
 
-        _card = CardData(**{k.lower(): v for k, v in self.cardInfo[str(self.lang)].items()})
+        _card = namedtuple('Card', self.cardInfo[str(self.lang)].keys())(*self.cardInfo[str(self.lang)].values())
         return _card
 
     def extract_front_info(self, image):
