@@ -206,9 +206,9 @@ class PersonalCard:
         def split_thai_fullname(fullname: str):
             cleaned = clean_thai_name(fullname).strip()
             parts = cleaned.split()
-            prefix = parts[0] if len(parts) > 2 else ""
-            name = parts[1] if len(parts) > 2 else (parts[0] if len(parts) > 1 else "")
-            lastname = parts[2] if len(parts) > 2 else (parts[1] if len(parts) > 1 else "")
+            prefix = parts[0] if len(parts) == 3 else ""
+            name = parts[1] if len(parts) == 3 else parts[0] if len(parts) >= 1 else ""
+            lastname = parts[2] if len(parts) == 3 else parts[1] if len(parts) == 2 else ""
             return prefix, name, lastname
 
         if str(self.lang) == str(Language.MIX) and str(side) == str(Card.FRONT_TEMPLATE):
@@ -217,7 +217,7 @@ class PersonalCard:
             self.cardInfo[str(self.lang)]["NameTH"] = name_th
             self.cardInfo[str(self.lang)]["LastNameTH"] = lastname_th
 
-            extract_en = self.cardInfo[str(self.lang)]["NameEN"].strip().split()
+            extract_en = re.sub(r'[^\w\s]', '', self.cardInfo[str(self.lang)]["NameEN"]).strip().split()
             self.cardInfo[str(self.lang)]["PrefixEN"] = extract_en[0] if len(extract_en) > 0 else ""
             self.cardInfo[str(self.lang)]["NameEN"] = " ".join(extract_en[1:]) if len(extract_en) > 1 else ""
         elif str(self.lang) == str(Language.THAI) and str(side) == str(Card.FRONT_TEMPLATE):
