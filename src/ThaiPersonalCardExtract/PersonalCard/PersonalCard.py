@@ -202,22 +202,11 @@ class PersonalCard:
             cleaned = re.sub(r'[^\u0E00-\u0E7F\s]', '', name_th).strip()
             parts = cleaned.split()
             prefixes = {"นาย", "นาง", "นางสาว", "เด็กชาย", "เด็กหญิง"}
-
-            if len(parts) >= 3:
-                if parts[0] in prefixes:
-                    return parts[0], parts[1], parts[2]
-                else:
-                    return "", parts[0], parts[1]  # ไม่พบคำนำหน้า → ถือว่าชื่อ-นามสกุล
-            elif len(parts) == 2:
-                if parts[0] in prefixes:
-                    return parts[0], parts[1], ""
-                else:
-                    return "", parts[0], parts[1]
-            elif len(parts) == 1:
-                return "", parts[0], ""
-            else:
-                return "", "", ""
-
+            if len(parts) >= 2 and parts[0] in prefixes:
+                return parts[0], " ".join(parts[1:])
+            elif len(parts) >= 1:
+                return "", " ".join(parts)
+            return "", ""
             
         def split_english_fullname(name_en: str):
             cleaned = re.sub(r'[^\w\s]', ' ', name_en).strip()
