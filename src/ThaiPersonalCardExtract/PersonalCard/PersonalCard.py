@@ -56,9 +56,8 @@ class PersonalCard:
                 "HouseNumber": "",
                 "Village_or_Road": "",
                 "District": "",
-                "Amphoe": "",
+                "Subdistrict": "",
                 "Province": "",
-                "Postcode": "",
             },
             "tha": {
                 "Identification_Number": "",
@@ -235,11 +234,11 @@ class PersonalCard:
             elif len(parts) >= 1:
                 return "", " ".join(parts)
             return "", ""
-        
+
         def extract_address_components(address: str):
-            # ลบสัญลักษณ์แปลกๆ (เพิ่ม ฺ ` \ =)
-            address = re.sub(r"[^\u0E00-\u0E7F0-9/\s]", "", address)  # ลบสัญลักษณ์พิเศษอื่น ๆ
-            address = re.sub(r"[ฺ`=]", "", address)  # ลบเครื่องหมายพิเศษเพิ่มเติม
+            # ลบสัญลักษณ์แปลก ๆ ที่มักโผล่จาก OCR เช่น ฺ ` = และอื่น ๆ
+            address = re.sub(r"[^\u0E00-\u0E7F0-9/\s]", "", address)
+            address = re.sub(r"[ฺ`=]", "", address)
             address = re.sub(r"\s+", " ", address)  # normalize ช่องว่าง
             address = address.strip()
 
@@ -248,8 +247,7 @@ class PersonalCard:
                 "Village_or_Road": "",
                 "District": "",
                 "Amphoe": "",
-                "Province": "",
-                "Postcode": ""
+                "Province": ""
             }
 
             # 1. แยกเลขบ้าน เช่น 99/1 หรือ 123
@@ -260,32 +258,30 @@ class PersonalCard:
 
             tokens = address.split()
 
-            # 2. แยกหมู่บ้านหรือถนน (สมมุติคำแรกหลังเลขบ้าน)
+            # 2. แยกหมู่บ้าน หรือถนน
+            # ถ้าคำถัดไปไม่ใช่คำหลัก (เช่น เขต, อำเภอ, จังหวัด) ให้รวมคำที่ 0 และ 1 เป็นหมู่บ้าน/ถนน
             if tokens:
-                # รวมคำที่ติดกันโดยผิดพลาด เช่น "มิซีโฮ ฮะ" -> "มิซีโฮะ"
-                # วิธีง่าย ๆ คือถ้าคำถัดไปแยกผิด ให้รวม 2 คำแรกเข้าด้วยกัน
-                if len(tokens) >= 2 and tokens[1] in {"ฮะ", "ฮา"}:
+                if len(tokens) >= 2 and tokens[1] not in {"เขต", "อำเภอ", "อ.", "จังหวัด", "จ.", "ถนน"}:
                     result["Village_or_Road"] = tokens[0] + tokens[1]
-                    tokens = tokens[2:]  # ลบ 2 คำออก
+                    tokens = tokens[2:]
                 else:
                     result["Village_or_Road"] = tokens[0]
                     tokens = tokens[1:]
             else:
                 tokens = []
 
-            # 3. หาเขต / อำเภอ / จังหวัด
+            # 3. หาเขต / อำเภอ / จังหวัด / ถนน
             for i, token in enumerate(tokens):
                 if token == "เขต" and i + 1 < len(tokens):
                     result["District"] = tokens[i + 1]
-                elif token == "อำเภอ" and i + 1 < len(tokens):
+                elif token in {"อำเภอ", "อ."} and i + 1 < len(tokens):
                     result["Amphoe"] = tokens[i + 1]
-                elif token == "จังหวัด" and i + 1 < len(tokens):
+                elif token in {"จังหวัด", "จ."} and i + 1 < len(tokens):
                     result["Province"] = tokens[i + 1]
-
-            # 4. หาเลขไปรษณีย์ (5 ตัวท้าย)
-            match = re.search(r"\d{5}$", address)
-            if match:
-                result["Postcode"] = match.group(0)
+                elif token == "ถนน" and i + 1 < len(tokens):
+                    # กรณีถนน อาจจะเก็บใน Village_or_Road หรือแยกอีก field ได้
+                    # ที่นี่ผมเก็บรวมกับ Village_or_Road เผื่อใช้งานต่อ
+                    result["Village_or_Road"] = tokens[i + 1]
 
             return result
 
