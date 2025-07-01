@@ -196,14 +196,22 @@ class PersonalCard:
             if self.save_extract_result:
                 Image.fromarray(imgCrop).save(os.path.join(self.path_to_save, f'{box["name"]}.jpg'), compress_level=3)
 
+        
+        def clean_thai_name(text: str):
+            # ลบสระหรือวรรณยุกต์ที่ผิด เช่น ฺ (ไม้ไต่คู้)
+            return re.sub(r'[^\u0E00-\u0E7F\s]', '', text)
+
         if str(self.lang) == str(Language.MIX) and str(side) == str(Card.FRONT_TEMPLATE):
-            extract_th = self.cardInfo[str(self.lang)]["FullNameTH"].split(' ')
+            cleaned_fullname_th = clean_thai_name(self.cardInfo[str(self.lang)]["FullNameTH"])
+            cleaned_name_en = clean_thai_name(self.cardInfo[str(self.lang)]["NameEN"])
+
+            extract_th = cleaned_fullname_th.strip().split()
             self.cardInfo[str(self.lang)]["PrefixTH"] = str("".join(extract_th[0]))
             self.cardInfo[str(self.lang)]["NameTH"] = str(
                 "".join(extract_th[1] if len(extract_th) > 2 else extract_th[-1]))
             self.cardInfo[str(self.lang)]["LastNameTH"] = str("".join(extract_th[-1]))
 
-            extract_en = self.cardInfo[str(self.lang)]["NameEN"].split(' ')
+            extract_en = cleaned_name_en.strip().split()
             self.cardInfo[str(self.lang)]["PrefixEN"] = str("".join(extract_en[0]))
             self.cardInfo[str(self.lang)]["NameEN"] = str("".join(extract_en[1:]))
         elif str(self.lang) == str(Language.THAI) and str(side) == str(Card.FRONT_TEMPLATE):
