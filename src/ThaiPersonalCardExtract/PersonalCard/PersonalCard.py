@@ -196,24 +196,30 @@ class PersonalCard:
             if self.save_extract_result:
                 Image.fromarray(imgCrop).save(os.path.join(self.path_to_save, f'{box["name"]}.jpg'), compress_level=3)
 
-        
+        # Function ที่ทำเพิ่มจากตัวต้นฉบับ
+        # ใช้ลบวรรณยุกต์ผิดเช่น  ฺ และสัญลักษณ์พิเศษที่ไม่ใช่อักษรไทยหรือช่องว่าง
         def clean_thai_name(text: str):
-            # ลบสระหรือวรรณยุกต์ที่ผิด เช่น ฺ (ไม้ไต่คู้)
             return re.sub(r'[^\u0E00-\u0E7F\s]', '', text)
 
+        # Function ที่ทำเพิ่มจากตัวต้นฉบับ
+        # ใช้จัดการช่องว่างของ  prefix, name และ lastname
+        def split_thai_fullname(fullname: str):
+            cleaned = clean_thai_name(fullname).strip()
+            parts = cleaned.split()
+            prefix = parts[0] if len(parts) > 2 else ""
+            name = parts[1] if len(parts) > 2 else (parts[0] if len(parts) > 1 else "")
+            lastname = parts[2] if len(parts) > 2 else (parts[1] if len(parts) > 1 else "")
+            return prefix, name, lastname
+
         if str(self.lang) == str(Language.MIX) and str(side) == str(Card.FRONT_TEMPLATE):
-            cleaned_fullname_th = clean_thai_name(self.cardInfo[str(self.lang)]["FullNameTH"])
-            cleaned_name_en = clean_thai_name(self.cardInfo[str(self.lang)]["NameEN"])
+            prefix_th, name_th, lastname_th = split_thai_fullname(self.cardInfo[str(self.lang)]["FullNameTH"])
+            self.cardInfo[str(self.lang)]["PrefixTH"] = prefix_th
+            self.cardInfo[str(self.lang)]["NameTH"] = name_th
+            self.cardInfo[str(self.lang)]["LastNameTH"] = lastname_th
 
-            extract_th = cleaned_fullname_th.strip().split()
-            self.cardInfo[str(self.lang)]["PrefixTH"] = str("".join(extract_th[0]))
-            self.cardInfo[str(self.lang)]["NameTH"] = str(
-                "".join(extract_th[1] if len(extract_th) > 2 else extract_th[-1]))
-            self.cardInfo[str(self.lang)]["LastNameTH"] = str("".join(extract_th[-1]))
-
-            extract_en = cleaned_name_en.strip().split()
-            self.cardInfo[str(self.lang)]["PrefixEN"] = str("".join(extract_en[0]))
-            self.cardInfo[str(self.lang)]["NameEN"] = str("".join(extract_en[1:]))
+            extract_en = self.cardInfo[str(self.lang)]["NameEN"].strip().split()
+            self.cardInfo[str(self.lang)]["PrefixEN"] = extract_en[0] if len(extract_en) > 0 else ""
+            self.cardInfo[str(self.lang)]["NameEN"] = " ".join(extract_en[1:]) if len(extract_en) > 1 else ""
         elif str(self.lang) == str(Language.THAI) and str(side) == str(Card.FRONT_TEMPLATE):
             extract_th = self.cardInfo[str(self.lang)]["FullNameTH"].split(' ')
             self.cardInfo[str(self.lang)]["PrefixTH"] = str("".join(extract_th[0]))
