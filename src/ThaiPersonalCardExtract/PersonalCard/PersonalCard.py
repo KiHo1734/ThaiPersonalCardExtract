@@ -258,6 +258,9 @@ class PersonalCard:
 
             tokens = address.split()
 
+            print(address)
+            print(tokens)
+
             # หาเขต / อำเภอ / จังหวัด
             for i, token in enumerate(tokens):
                 if token == "เขต" and i + 1 < len(tokens):
