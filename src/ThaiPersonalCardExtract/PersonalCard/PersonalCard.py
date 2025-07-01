@@ -237,8 +237,11 @@ class PersonalCard:
             return "", ""
         
         def extract_address_components(address: str):
-            address = re.sub(r"[^\u0E00-\u0E7F0-9/\s]", "", address)  # ลบสัญลักษณ์พิเศษ
+            # ลบสัญลักษณ์แปลกๆ (เพิ่ม ฺ ` \ =)
+            address = re.sub(r"[^\u0E00-\u0E7F0-9/\s]", "", address)  # ลบสัญลักษณ์พิเศษอื่น ๆ
+            address = re.sub(r"[ฺ`=]", "", address)  # ลบเครื่องหมายพิเศษเพิ่มเติม
             address = re.sub(r"\s+", " ", address)  # normalize ช่องว่าง
+            address = address.strip()
 
             result = {
                 "HouseNumber": "",
@@ -255,29 +258,36 @@ class PersonalCard:
                 result["HouseNumber"] = match.group(0)
                 address = address[match.end():].strip()
 
-            # 2. แยกคำถัดไปเป็นถนน/หมู่บ้าน
             tokens = address.split()
+
+            # 2. แยกหมู่บ้านหรือถนน (สมมุติคำแรกหลังเลขบ้าน)
             if tokens:
-                result["Village_or_Road"] = tokens[0]
+                # รวมคำที่ติดกันโดยผิดพลาด เช่น "มิซีโฮ ฮะ" -> "มิซีโฮะ"
+                # วิธีง่าย ๆ คือถ้าคำถัดไปแยกผิด ให้รวม 2 คำแรกเข้าด้วยกัน
+                if len(tokens) >= 2 and tokens[1] in {"ฮะ", "ฮา"}:
+                    result["Village_or_Road"] = tokens[0] + tokens[1]
+                    tokens = tokens[2:]  # ลบ 2 คำออก
+                else:
+                    result["Village_or_Road"] = tokens[0]
+                    tokens = tokens[1:]
+            else:
+                tokens = []
 
             # 3. หาเขต / อำเภอ / จังหวัด
-            if "เขต" in tokens:
-                idx = tokens.index("เขต")
-                result["District"] = tokens[idx + 1] if idx + 1 < len(tokens) else ""
-            if "อำเภอ" in tokens:
-                idx = tokens.index("อำเภอ")
-                result["Amphoe"] = tokens[idx + 1] if idx + 1 < len(tokens) else ""
-            if "จังหวัด" in tokens:
-                idx = tokens.index("จังหวัด")
-                result["Province"] = tokens[idx + 1] if idx + 1 < len(tokens) else ""
+            for i, token in enumerate(tokens):
+                if token == "เขต" and i + 1 < len(tokens):
+                    result["District"] = tokens[i + 1]
+                elif token == "อำเภอ" and i + 1 < len(tokens):
+                    result["Amphoe"] = tokens[i + 1]
+                elif token == "จังหวัด" and i + 1 < len(tokens):
+                    result["Province"] = tokens[i + 1]
 
-            # 4. หาเลขไปรษณีย์
+            # 4. หาเลขไปรษณีย์ (5 ตัวท้าย)
             match = re.search(r"\d{5}$", address)
             if match:
                 result["Postcode"] = match.group(0)
 
             return result
-
 
         if str(self.lang) == str(Language.MIX) and str(side) == str(Card.FRONT_TEMPLATE):
             prefix_th, name_th, lastname_th = split_thai_fullname(self.cardInfo[str(self.lang)]["FullNameTH"])
