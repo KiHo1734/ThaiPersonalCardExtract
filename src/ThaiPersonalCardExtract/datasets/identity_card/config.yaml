@@ -96,7 +96,7 @@ roi_extract:
     tesseract_config: "--dpi 300 --psm 13 --oem 1"
     blocklist: ''
     allowlist: ''
-    provider: tesseract
+    provider: easyocr
   - point:
     - 50
     - 275
