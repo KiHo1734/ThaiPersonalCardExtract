@@ -52,6 +52,13 @@ class PersonalCard:
                 "DateOfExpiryTH": "",
                 "DateOfExpiryEN": "",
                 "LaserCode": "",
+                # เพิ่ม field แยกจากที่อยู่
+                "HouseNumber": "",
+                "Village_or_Road": "",
+                "District": "",
+                "Amphoe": "",
+                "Province": "",
+                "Postcode": "",
             },
             "tha": {
                 "Identification_Number": "",
@@ -203,10 +210,6 @@ class PersonalCard:
             parts = cleaned.split()
             prefixes = {"นาย", "นาง", "นางสาว", "เด็กชาย", "เด็กหญิง"}
 
-            print(name_th)
-            print(cleaned)
-            print(parts)
-
             if len(parts) >= 3:
                 if parts[0] in prefixes:
                     return parts[0], parts[1], parts[2]
@@ -222,16 +225,57 @@ class PersonalCard:
             else:
                 return "", "", ""
 
-            
         def split_english_fullname(name_en: str):
             cleaned = re.sub(r'[^\w\s]', ' ', name_en).strip()
             parts = cleaned.split()
             prefixes = {"Mr", "Mrs", "Ms", "Miss"}
+
             if len(parts) >= 2 and parts[0] in prefixes:
                 return parts[0], " ".join(parts[1:])
             elif len(parts) >= 1:
                 return "", " ".join(parts)
             return "", ""
+        
+        def extract_address_components(address: str):
+            address = re.sub(r"[^\u0E00-\u0E7F0-9/\s]", "", address)  # ลบสัญลักษณ์พิเศษ
+            address = re.sub(r"\s+", " ", address)  # normalize ช่องว่าง
+
+            result = {
+                "house_number": "",
+                "village_or_road": "",
+                "district": "",
+                "amphoe": "",
+                "province": "",
+                "postcode": ""
+            }
+
+            # 1. แยกเลขบ้าน (ตัวอย่าง 99/1 หรือ 123)
+            match = re.search(r"(\d+/\d+|\d+)", address)
+            if match:
+                result["house_number"] = match.group(0)
+                address = address[match.end():].strip()
+
+            # 2. แยกแขวง/ถนน/หมู่บ้าน (คำถัดไป)
+            tokens = address.split()
+
+            if tokens:
+                result["village_or_road"] = tokens[0]
+            if "เขต" in tokens:
+                idx = tokens.index("เขต")
+                result["district"] = tokens[idx + 1] if idx + 1 < len(tokens) else ""
+            if "อำเภอ" in tokens:
+                idx = tokens.index("อำเภอ")
+                result["amphoe"] = tokens[idx + 1] if idx + 1 < len(tokens) else ""
+            if "จังหวัด" in tokens:
+                idx = tokens.index("จังหวัด")
+                result["province"] = tokens[idx + 1] if idx + 1 < len(tokens) else ""
+
+            # 3. แยกรหัสไปรษณีย์ (5 ตัวเลขสุดท้าย)
+            match = re.search(r"\d{5}$", address)
+            if match:
+                result["postcode"] = match.group(0)
+
+            return result
 
         if str(self.lang) == str(Language.MIX) and str(side) == str(Card.FRONT_TEMPLATE):
             prefix_th, name_th, lastname_th = split_thai_fullname(self.cardInfo[str(self.lang)]["FullNameTH"])
