@@ -263,10 +263,10 @@ class PersonalCard:
 
             # หาเขต / อำเภอ / จังหวัด
             for token in tokens:
-                if token.startswith("เขต"):
-                    result["District"] = token.replace("เขต", "")
-                elif token.startswith("อำเภอ") or token.startswith("อ."):
-                    result["Subdistrict"] = token.replace("อำเภอ", "").replace("อ.", "")
+                if token.startswith("อำเภอ"):
+                    result["District"] = token.replace("อำเภอ", "")
+                elif token.startswith("เขต") or token.startswith("อ."):
+                    result["Subdistrict"] = token.replace("เขต", "").replace("อ.", "")
                 elif token.startswith("จังหวัด") or token.startswith("จ."):
                     result["Province"] = token.replace("จังหวัด", "").replace("จ.", "")
                 elif token.startswith("ถนน") or token.startswith("ถ."):
