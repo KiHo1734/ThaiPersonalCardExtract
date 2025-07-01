@@ -258,9 +258,6 @@ class PersonalCard:
 
             tokens = address.split()
 
-            print(address)
-            print(tokens)
-
             # หาเขต / อำเภอ / จังหวัด
             for token in tokens:
                 if token.startswith("อำเภอ"):
