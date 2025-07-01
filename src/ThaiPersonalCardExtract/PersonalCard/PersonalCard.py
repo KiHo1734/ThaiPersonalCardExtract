@@ -303,7 +303,7 @@ class PersonalCard:
         if str(side) == str(Card.BACK_TEMPLATE):
             self.cardInfo[str(self.lang)]["LaserCode"] = "".join(re.findall("([a-zA-Z0-9])",self.cardInfo[str(self.lang)]["LaserCode"])).upper()
 
-        _card = namedtuple('Card', self.cardInfo[str(self.lang)].keys())(*self.cardInfo[str(self.lang)].values())
+        _card = CardData(**{k.lower(): v for k, v in self.cardInfo[str(self.lang)].items()})
         return _card
 
     def extract_front_info(self, image):
