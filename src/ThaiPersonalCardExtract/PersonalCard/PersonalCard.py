@@ -271,6 +271,8 @@ class PersonalCard:
                     result["Province"] = token.replace("จังหวัด", "").replace("จ.", "")
                 elif token.startswith("ถนน") or token.startswith("ถ."):
                     result["Road"] = token.replace("ถนน", "").replace("ถ.", "")
+            
+            return result
 
         if str(self.lang) == str(Language.MIX) and str(side) == str(Card.FRONT_TEMPLATE):
             prefix_th, name_th, lastname_th = split_thai_fullname(self.cardInfo[str(self.lang)]["FullNameTH"])
