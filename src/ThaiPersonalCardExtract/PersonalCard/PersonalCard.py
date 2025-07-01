@@ -206,10 +206,24 @@ class PersonalCard:
         def split_thai_fullname(fullname: str):
             cleaned = clean_thai_name(fullname).strip()
             parts = cleaned.split()
-            prefix = parts[0] if len(parts) == 3 else ""
-            name = parts[1] if len(parts) == 3 else parts[0] if len(parts) >= 1 else ""
-            lastname = parts[2] if len(parts) == 3 else parts[1] if len(parts) == 2 else ""
-            return prefix, name, lastname
+            if len(parts) >= 3:
+                return parts[0], parts[1], parts[2]
+            elif len(parts) == 2:
+                return "", parts[0], parts[1]
+            elif len(parts) == 1:
+                return "", parts[0], ""
+            else:
+                return "", "", ""
+            
+        def split_english_fullname(name_en: str):
+            cleaned = re.sub(r'[^\w\s]', ' ', name_en).strip()
+            parts = cleaned.split()
+            prefixes = {"Mr", "Mrs", "Ms", "Miss"}
+            if len(parts) >= 2 and parts[0] in prefixes:
+                return parts[0], " ".join(parts[1:])
+            elif len(parts) >= 1:
+                return "", " ".join(parts)
+            return "", ""
 
         if str(self.lang) == str(Language.MIX) and str(side) == str(Card.FRONT_TEMPLATE):
             prefix_th, name_th, lastname_th = split_thai_fullname(self.cardInfo[str(self.lang)]["FullNameTH"])
@@ -217,9 +231,9 @@ class PersonalCard:
             self.cardInfo[str(self.lang)]["NameTH"] = name_th
             self.cardInfo[str(self.lang)]["LastNameTH"] = lastname_th
 
-            extract_en = re.sub(r'[^\w\s]', '', self.cardInfo[str(self.lang)]["NameEN"]).strip().split()
-            self.cardInfo[str(self.lang)]["PrefixEN"] = extract_en[0] if len(extract_en) > 0 else ""
-            self.cardInfo[str(self.lang)]["NameEN"] = " ".join(extract_en[1:]) if len(extract_en) > 1 else ""
+            prefix_en, name_en = split_english_fullname(self.cardInfo[str(self.lang)]["NameEN"])
+            self.cardInfo[str(self.lang)]["PrefixEN"] = prefix_en
+            self.cardInfo[str(self.lang)]["NameEN"] = name_en
         elif str(self.lang) == str(Language.THAI) and str(side) == str(Card.FRONT_TEMPLATE):
             extract_th = self.cardInfo[str(self.lang)]["FullNameTH"].split(' ')
             self.cardInfo[str(self.lang)]["PrefixTH"] = str("".join(extract_th[0]))
