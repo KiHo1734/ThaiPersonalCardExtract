@@ -286,6 +286,9 @@ class PersonalCard:
             prefix_en, name_en = split_english_fullname(self.cardInfo[str(self.lang)]["NameEN"])
             self.cardInfo[str(self.lang)]["PrefixEN"] = prefix_en
             self.cardInfo[str(self.lang)]["NameEN"] = name_en
+
+            address_components = extract_address_components(self.cardInfo[str(self.lang)]["Address"])
+            self.cardInfo[str(self.lang)].update(address_components)
         elif str(self.lang) == str(Language.THAI) and str(side) == str(Card.FRONT_TEMPLATE):
             extract_th = self.cardInfo[str(self.lang)]["FullNameTH"].split(' ')
             self.cardInfo[str(self.lang)]["PrefixTH"] = str("".join(extract_th[0]))
