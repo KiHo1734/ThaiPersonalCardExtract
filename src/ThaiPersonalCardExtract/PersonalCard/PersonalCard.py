@@ -197,23 +197,27 @@ class PersonalCard:
                 Image.fromarray(imgCrop).save(os.path.join(self.path_to_save, f'{box["name"]}.jpg'), compress_level=3)
 
         # Function ที่ทำเพิ่มจากตัวต้นฉบับ
-        # ใช้ลบวรรณยุกต์ผิดเช่น  ฺ และสัญลักษณ์พิเศษที่ไม่ใช่อักษรไทยหรือช่องว่าง
-        def clean_thai_name(text: str):
-            return re.sub(r'[^\u0E00-\u0E7F\s]', '', text)
-
-        # Function ที่ทำเพิ่มจากตัวต้นฉบับ
         # ใช้จัดการช่องว่างของ  prefix, name และ lastname
-        def split_thai_fullname(fullname: str):
-            cleaned = clean_thai_name(fullname).strip()
+        def split_thai_fullname(name_th: str):
+            cleaned = re.sub(r'[^\u0E00-\u0E7F\s]', '', name_th).strip()
             parts = cleaned.split()
+            prefixes = {"นาย", "นาง", "นางสาว", "เด็กชาย", "เด็กหญิง"}
+
             if len(parts) >= 3:
-                return parts[0], parts[1], parts[2]
+                if parts[0] in prefixes:
+                    return parts[0], parts[1], parts[2]
+                else:
+                    return "", parts[0], parts[1]  # ไม่พบคำนำหน้า → ถือว่าชื่อ-นามสกุล
             elif len(parts) == 2:
-                return "", parts[0], parts[1]
+                if parts[0] in prefixes:
+                    return parts[0], parts[1], ""
+                else:
+                    return "", parts[0], parts[1]
             elif len(parts) == 1:
                 return "", parts[0], ""
             else:
                 return "", "", ""
+
             
         def split_english_fullname(name_en: str):
             cleaned = re.sub(r'[^\w\s]', ' ', name_en).strip()
