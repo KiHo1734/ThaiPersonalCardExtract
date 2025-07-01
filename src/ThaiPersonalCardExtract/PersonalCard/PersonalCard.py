@@ -54,7 +54,7 @@ class PersonalCard:
                 "LaserCode": "",
                 # เพิ่ม field แยกจากที่อยู่
                 "HouseNumber": "",
-                "Village_or_Road": "",
+                "Road": "",
                 "District": "",
                 "Subdistrict": "",
                 "Province": "",
@@ -234,24 +234,23 @@ class PersonalCard:
             elif len(parts) >= 1:
                 return "", " ".join(parts)
             return "", ""
-
+        
         def extract_address_components(address: str):
-            # ลบสัญลักษณ์แปลก ๆ
-            address = re.sub(r"[^\u0E00-\u0E7F0-9/\s]", "", address)
-            address = re.sub(r"[ฺ`=]", "", address)
-            address = re.sub(r"\s+", " ", address)
+            # ลบสัญลักษณ์แปลกๆ (เพิ่ม ฺ ` \ =)
+            address = re.sub(r"[^\u0E00-\u0E7F0-9/\s]", "", address)  # ลบสัญลักษณ์พิเศษอื่น ๆ
+            address = re.sub(r"[ฺ`=]", "", address)  # ลบเครื่องหมายพิเศษเพิ่มเติม
+            address = re.sub(r"\s+", " ", address)  # normalize ช่องว่าง
             address = address.strip()
 
             result = {
                 "HouseNumber": "",
-                "Village_or_Road": "",
-                "Subdistrict": "",
+                "Road": "",
                 "District": "",
-                "Amphoe": "",
+                "Subdistrict": "",
                 "Province": ""
             }
 
-            # 1. แยกเลขบ้าน
+            # แยกเลขบ้าน เช่น 99/1 หรือ 123
             match = re.search(r"(\d+/\d+|\d+)", address)
             if match:
                 result["HouseNumber"] = match.group(0)
@@ -259,29 +258,17 @@ class PersonalCard:
 
             tokens = address.split()
 
-            # 2. แยกหมู่บ้าน หรือถนน (คำแรก ๆ ก่อนคำหลัก)
-            village_tokens = []
-            for token in tokens:
-                if token in {"ตำบล", "แขวง", "เขต", "อำเภอ", "อ.", "จังหวัด", "จ.", "ถนน"}:
-                    break
-                village_tokens.append(token)
-            result["Village_or_Road"] = " ".join(village_tokens)
-
-            # หาคำหลักและค่าตามหลัง
+            # หาเขต / อำเภอ / จังหวัด
             for i, token in enumerate(tokens):
-                if token in {"ตำบล", "แขวง"} and i + 1 < len(tokens):
-                    result["Subdistrict"] = tokens[i + 1]
-                elif token == "เขต" and i + 1 < len(tokens):
+                if token == "เขต" and i + 1 < len(tokens):
                     result["District"] = tokens[i + 1]
-                elif token in {"อำเภอ", "อ."} and i + 1 < len(tokens):
-                    result["Amphoe"] = tokens[i + 1]
-                elif token in {"จังหวัด", "จ."} and i + 1 < len(tokens):
+                elif (token == "อำเภอ" or token == "อ.") and i + 1 < len(tokens):
+                    result["Subdistrict"] = tokens[i + 1]
+                elif (token == "จังหวัด" or token == "") and i + 1 < len(tokens):
                     result["Province"] = tokens[i + 1]
-                elif token == "ถนน" and i + 1 < len(tokens):
-                    # อาจเก็บรวมใน Village_or_Road หรือสร้าง field ใหม่ได้
-                    pass
-
-                return result
+                elif (token == "ถนน" or token == "ถ.") and i + 1 < len(tokens):
+                    result["Road"] = tokens[i + 1]
+            return result
 
         if str(self.lang) == str(Language.MIX) and str(side) == str(Card.FRONT_TEMPLATE):
             prefix_th, name_th, lastname_th = split_thai_fullname(self.cardInfo[str(self.lang)]["FullNameTH"])
